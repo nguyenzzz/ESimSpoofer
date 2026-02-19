@@ -1,4 +1,4 @@
-name: Build DeviceCheckBypass
+name: Build UUIDSpoofer
 
 on: [push, workflow_dispatch]
 
@@ -12,13 +12,13 @@ jobs:
     - name: Compile Tweak
       run: |
         xcrun -sdk iphoneos clang -dynamiclib -arch arm64 \
-          -framework Foundation -framework DeviceCheck \
+          -framework Foundation -framework UIKit \
           -fobjc-arc \
-          -o DeviceCheckBypass.dylib \
-          DeviceCheckBypass.m
+          -o UUIDSpoofer.dylib \
+          UUIDSpoofer.m
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: DeviceCheckBypass
-        path: DeviceCheckBypass.dylib
+        name: UUIDSpoofer
+        path: UUIDSpoofer.dylib
