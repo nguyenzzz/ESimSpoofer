@@ -1,25 +1,24 @@
-name: Build ESimSpoofer
+name: Build DeviceCheckBypass
 
-on: [push, workflow_dispatch] # Added workflow_dispatch so you can run it manually
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4 # Updated to v4
+    - uses: actions/checkout@v4
 
     - name: Compile Tweak
       run: |
-        # Compile the dylib using clang
         xcrun -sdk iphoneos clang -dynamiclib -arch arm64 \
-          -framework Foundation -framework CoreTelephony \
+          -framework Foundation -framework DeviceCheck \
           -fobjc-arc \
-          -o ESimSpoofer.dylib \
-          ESimSpoofer.m
+          -o DeviceCheckBypass.dylib \
+          DeviceCheckBypass.m
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4 # FIXED: Updated to v4
+      uses: actions/upload-artifact@v4
       with:
-        name: ESimSpoofer
-        path: ESimSpoofer.dylib
+        name: DeviceCheckBypass
+        path: DeviceCheckBypass.dylib
