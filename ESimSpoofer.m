@@ -7,10 +7,10 @@
 
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
-#import <syslog.h>
 
-// Helper to log to the device console (useful for debugging)
-#define ESIM_LOG(fmt, ...) syslog(LOG_WARNING, "[ESimSpoofer] " fmt, ##__VA_ARGS__)
+// FIXED: Use NSLog instead of syslog. 
+// This handles the @"String" format correctly and fixes the compilation error.
+#define ESIM_LOG(fmt, ...) NSLog(@"[ESimSpoofer] " fmt, ##__VA_ARGS__)
 
 // Define the interface we want to hook so the compiler knows it exists
 @interface CTCellularPlanProvisioning : NSObject
@@ -33,7 +33,7 @@ static void ESimSpooferInit(void) {
     
     if (!targetClass) {
         // If CoreTelephony isn't loaded yet, we might miss it. 
-        // usually standard apps load it early, but safe to check.
+        // Standard apps usually load it, but we log just in case.
         ESIM_LOG(@"Error: CTCellularPlanProvisioning class not found. Is CoreTelephony linked?");
         return;
     }
