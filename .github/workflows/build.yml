@@ -1,0 +1,26 @@
+name: Build ESimSpoofer
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Compile Tweak
+      run: |
+        # Create a simple Makefile-like command using clang
+        # SDK is standard on GitHub's macOS runners
+        xcrun -sdk iphoneos clang -dynamiclib -arch arm64 \
+          -framework Foundation -framework CoreTelephony \
+          -fobjc-arc \
+          -o ESimSpoofer.dylib \
+          ESimSpoofer.m
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ESimSpoofer
+        path: ESimSpoofer.dylib
