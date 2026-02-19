@@ -13,46 +13,34 @@
 #define DC_LOG(fmt, ...) NSLog(@"[DeviceCheckBypass] " fmt, ##__VA_ARGS__)
 
 // -------------------------------------------------------------------------
-// 1. Hook DCDevice (The older API)
+// 1. Fake Implementations for DCDevice (Older API)
 // -------------------------------------------------------------------------
 
-@interface DCDevice (Hooks)
-- (BOOL)isSupported;
-- (void)generateTokenWithCompletionHandler:(void(^)(NSData * _Nullable, NSError * _Nullable))completion;
-@end
-
-// Fake implementation for generateToken
 void hooked_generateToken(id self, SEL _cmd, void (^completion)(NSData *, NSError *)) {
     DC_LOG(@"App requested DeviceCheck Token. Generating fake token...");
     
-    // Create a dummy token (just random bytes)
+    // Create a dummy token 
     const char *bytes = "FakeDeviceCheckTokenForLiveContainer";
     NSData *fakeData = [NSData dataWithBytes:bytes length:strlen(bytes)];
     
-    // Call the completion block with SUCCESS (Data, No Error)
     if (completion) {
         completion(fakeData, nil);
     }
 }
 
-// Fake implementation for isSupported
 BOOL hooked_isSupported(id self, SEL _cmd) {
-    DC_LOG(@"App asked if DeviceCheck is supported. Returning YES.");
+    DC_LOG(@"App asked if DeviceCheck/AppAttest is supported. Returning YES.");
     return YES;
 }
 
 // -------------------------------------------------------------------------
-// 2. Hook DCAppAttestService (The newer API - likely what Red Bull uses)
+// 2. Fake Implementations for DCAppAttestService (Newer API)
 // -------------------------------------------------------------------------
 
-@interface DCAppAttestService : NSObject
-@end
-
-// Fake implementation for attestKey
 void hooked_attestKey(id self, SEL _cmd, id keyId, id clientDataHash, void (^completion)(id, NSError *)) {
     DC_LOG(@"App requested AppAttest Key Attestation. Spoofing success...");
     
-    // Create a dummy attestation object (random bytes)
+    // Create a dummy attestation object
     const char *bytes = "FakeAttestationObject";
     NSData *fakeAttestation = [NSData dataWithBytes:bytes length:strlen(bytes)];
     
@@ -61,7 +49,6 @@ void hooked_attestKey(id self, SEL _cmd, id keyId, id clientDataHash, void (^com
     }
 }
 
-// Fake implementation for generateKey
 void hooked_generateKey(id self, SEL _cmd, void (^completion)(NSString *, NSError *)) {
     DC_LOG(@"App requested new AppAttest Key. Returning fake Key ID...");
     
@@ -83,23 +70,24 @@ static void DeviceCheckBypassInit(void) {
     // Hook DCDevice
     Class dcClass = objc_getClass("DCDevice");
     if (dcClass) {
-        // Hook isSupported
-        Method isSupportedMethod = class_getClassMethod(dcClass, @selector(isSupported));
-        method_setImplementation(isSupportedMethod, (IMP)hooked_isSupported);
+        // isSupported is an instance method
+        Method isSupportedMethod = class_getInstanceMethod(dcClass, @selector(isSupported));
+        if (isSupportedMethod) method_setImplementation(isSupportedMethod, (IMP)hooked_isSupported);
         
-        // Hook generateTokenWithCompletionHandler:
         Method genTokenMethod = class_getInstanceMethod(dcClass, @selector(generateTokenWithCompletionHandler:));
-        method_setImplementation(genTokenMethod, (IMP)hooked_generateToken);
+        if (genTokenMethod) method_setImplementation(genTokenMethod, (IMP)hooked_generateToken);
     }
     
     // Hook DCAppAttestService
     Class attClass = objc_getClass("DCAppAttestService");
     if (attClass) {
-        // Hook generateKeyWithCompletionHandler:
+        // AppAttest also has an isSupported instance method we should hook
+        Method isSupportedAttest = class_getInstanceMethod(attClass, @selector(isSupported));
+        if (isSupportedAttest) method_setImplementation(isSupportedAttest, (IMP)hooked_isSupported);
+
         Method genKeyMethod = class_getInstanceMethod(attClass, @selector(generateKeyWithCompletionHandler:));
         if (genKeyMethod) method_setImplementation(genKeyMethod, (IMP)hooked_generateKey);
         
-        // Hook attestKey:clientDataHash:completionHandler:
         Method attestMethod = class_getInstanceMethod(attClass, @selector(attestKey:clientDataHash:completionHandler:));
         if (attestMethod) method_setImplementation(attestMethod, (IMP)hooked_attestKey);
     }
