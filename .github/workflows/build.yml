@@ -1,4 +1,4 @@
-name: Build DeviceSpoofer
+name: Build ReferralBypass_iPhoneAir
 
 on: [push, workflow_dispatch]
 
@@ -12,13 +12,13 @@ jobs:
     - name: Compile Tweak
       run: |
         xcrun -sdk iphoneos clang -dynamiclib -arch arm64 \
-          -framework Foundation -framework UIKit \
+          -framework Foundation -framework UIKit -framework AdSupport -framework Security \
           -fobjc-arc \
-          -o DeviceSpoofer.dylib \
-          DeviceSpoofer.m
+          -o ReferralBypass_iPhoneAir.dylib \
+          ReferralBypass_iPhoneAir.m
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: DeviceSpoofer
-        path: DeviceSpoofer.dylib
+        name: ReferralBypass_iPhoneAir
+        path: ReferralBypass_iPhoneAir.dylib
